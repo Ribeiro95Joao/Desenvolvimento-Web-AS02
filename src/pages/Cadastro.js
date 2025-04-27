@@ -15,6 +15,7 @@ function Cadastro() {
     nascimento: ''
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -23,6 +24,11 @@ function Cadastro() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    
+    // Impede múltiplos cliques
+    if (loading) return;
+    setLoading(true);
 
     try {
       // Criação do usuário no Firebase Authentication
@@ -40,8 +46,13 @@ function Cadastro() {
 
       navigate("/principal");
     } catch (error) {
-      setError(error.message);
+      if (error.code === 'auth/email-already-in-use') {
+        setError("Este e-mail já está em uso. Faça login ou use outro e-mail.");
+      } else {
+        setError(error.message);
+      }
     }
+    setLoading(false);
   };
 
   return (
@@ -99,7 +110,9 @@ function Cadastro() {
             required
           />
         </div>
-        <button type="submit">Cadastrar</button>
+        <button type="submit" disabled={loading}>
+          {loading ? "Cadastrando..." : "Cadastrar"}
+        </button>
       </form>
     </div>
   );
