@@ -15,6 +15,7 @@ function Cadastro() {
     nascimento: ''
   });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -25,17 +26,21 @@ function Cadastro() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     
-    // Impede múltiplos cliques
     if (loading) return;
     setLoading(true);
 
     try {
-      // Criação do usuário no Firebase Authentication
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.senha);
+      // Tenta criar o usuário no Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.senha
+      );
       const user = userCredential.user;
 
-      // Salva dados adicionais no Firestore, usando o UID como identificador
+      // Salva dados adicionais no Firestore, utilizando o UID como identificador
       await setDoc(doc(db, "users", user.uid), {
         nome: formData.nome,
         sobrenome: formData.sobrenome,
@@ -44,21 +49,33 @@ function Cadastro() {
         email: formData.email
       });
 
-      navigate("/principal");
-    } catch (error) {
-      if (error.code === 'auth/email-already-in-use') {
+      // Define a mensagem de sucesso e aguarda alguns segundos para redirecionar
+      setSuccess("Usuário cadastrado com sucesso!");
+      // Aguarda 2 segundos para que o usuário veja a mensagem
+      setTimeout(() => {
+        navigate("/principal");
+      }, 2000);
+
+    } catch (err) {
+      // Trata erros específicos
+      if (err.code === 'auth/email-already-in-use') {
         setError("Este e-mail já está em uso. Faça login ou use outro e-mail.");
       } else {
-        setError(error.message);
+        setError(err.message);
       }
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
     <div className="container">
       <h1>Cadastro</h1>
       {error && <p className="error">{error}</p>}
+      {success && (
+        <p style={{ color: "green", textAlign: "center", marginBottom: "10px" }}>
+          {success}
+        </p>
+      )}
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <input
